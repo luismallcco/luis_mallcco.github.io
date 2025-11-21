@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generador Automático de Certificados (Múltiples Plantillas)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Poppins:wght@300;400;600&family=Great+Vibes&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script> 
+    <style>
+        /* Variables CSS - Se actualizarán por JavaScript para las plantillas */
+        :root {
+            --primary-color: #004d99; /* Default: Azul marino */
+            --secondary-color: #ffd700; /* Default: Dorado */
+            --background-light: #f7f9fb;
+            --background-card: #ffffff;
+            --font-body: 'Poppins', sans-serif;
+            --font-display: 'Playfair Display', serif;
+            --border-style-main: 5px solid var(--secondary-color);
+            --border-style-outline: 5px solid var(--primary-color);
+            --cert-padding: 5%; /* Padding exterior del wrapper */
+            --cert-inner-margin: 5%; /* Margen interior para contenido como logo y QR */
+        }
+
+        /* Estilos Generales del Cuerpo y Contenedor */
+        body {
+            font-family: var(--font-body);
+            margin: 0;
+            padding: 30px 20px;
+            background-color: var(--background-light);
+            color: #333;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            gap: 40px;
+        }
+
+        /* Panel de Control (Formulario) */
+        .control-panel {
+            flex: 1;
+            padding: 25px;
+            background: var(--background-card);
+            border-radius: 12px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+            height: fit-content;
+        }
+        .control-panel h2 {
+            font-family: var(--font-display);
+            color: var(--primary-color);
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+            margin-top: 0;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 600;
+            color: var(--primary-color);
+            font-size: 0.95em;
+        }
+        input[type="text"], textarea, input[type="date"], select, input[type="file"] {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            box-sizing: border-box;
+            transition: border-color 0.3s;
+        }
+        input:focus, textarea:focus, select:focus {
+            border-color: var(--primary-color);
+            outline: none;
+            box-shadow: 0 0 5px rgba(0, 77, 153, 0.2);
+        }
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+        .btn-generate, .btn-batch {
+            width: 100%;
+            padding: 15px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.1em;
+            font-weight: 600;
+            transition: background-color 0.3s, transform 0.1s;
+            margin-top: 10px;
+        }
+        .btn-generate:hover, .btn-batch:hover {
+            background-color: #003366;
+            transform: translateY(-1px);
+        }
+
+        /* Nuevo estilo para el panel de carga de Excel */
+        .excel-batch-section {
+            border: 2px dashed #ccc;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            background: #fcfcfc;
+        }
+        .excel-batch-section h3 {
+            margin-top: 0;
+            color: #2E8B57; /* Un color diferente para destacar la acción de lote */
+            font-family: var(--font-display);
+        }
+        
+        /* Área del Certificado (Mismo que antes) */
+        .certificate-area {
+            flex: 3;
+            padding: 15px;
+            background: var(--background-card);
+            border-radius: 12px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+        }
+        .certificate-wrapper {
+            width: 100%;
+            aspect-ratio: 1.414 / 1;
+            background-color: #fffff8;
+            border: 1px solid #ddd;
+            padding: var(--cert-padding);
+            box-sizing: border-box;
+            position: relative;
+            text-align: center;
+            overflow: hidden;
+            transition: all 0.5s ease-in-out;
+        }
+        .certificate-wrapper::before {
+            content: '';
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            right: 15px;
+            bottom: 15px;
+            border: var(--border-style-main);
+            outline: var(--border-style-outline);
+            outline-offset: -15px;
+            transition: all 0.5s ease-in-out;
+        }
+
+        /* Estilos específicos de la plantilla (Mismo que antes) */
+        .template-classic .certificate-wrapper { background-color: #fcf9f3; }
+        .template-classic .certificate-wrapper::before {
+            border: 3px double #a00;
+            outline: 3px solid #8B0000;
+            outline-offset: -10px;
+        }
+        .template-classic .cert-title { color: #8B0000; font-family: var(--font-display); }
+        .template-classic .cert-recipient { font-family: 'Great Vibes', cursive; color: #5a0000; font-weight: normal;}
+        .template-classic .cert-body-text { color: #333; }
+        .template-classic .cert-company-name, .template-classic .qr-label { color: #8B0000; }
+
+        .template-modern .certificate-wrapper { background-color: #f0fdf4; }
+        .template-modern .certificate-wrapper::before {
+            border: 4px solid #3CB371;
+            outline: 2px solid #2E8B57;
+            outline-offset: -10px;
+            border-radius: 10px;
+        }
+        .template-modern .cert-title { color: #2E8B57; font-family: 'Poppins', sans-serif; font-weight: 600;}
+        .template-modern .cert-recipient { font-family: 'Poppins', sans-serif; color: #333; font-weight: 700; border-bottom: 1px solid #ddd;}
+        .template-modern .cert-body-text { color: #555; }
+        .template-modern .cert-company-name, .template-modern .qr-label { color: #2E8B57; }
+
+
+        /* ESTILO DE LA MARCA "MST CERTIFICA" (Mismo que antes) */
+        .cert-company-name {
+            position: absolute;
+            top: 50px;
+            left: var(--cert-inner-margin);
+            font-size: 1.5em;
+            font-weight: 700;
+            color: var(--primary-color);
+            letter-spacing: 2px;
+            text-decoration: underline;
+            text-decoration-color: var(--secondary-color);
+            padding-bottom: 2px;
+            transition: all 0.5s ease-in-out;
+            z-index: 2;
+        }
+        
+        /* Contenido del Certificado (Mismo que antes) */
+        .cert-title {
+            font-family: var(--font-display);
+            font-size: 3.5em;
+            color: var(--primary-color);
+            margin-top: 100px;
+            margin-bottom: 5px;
+            font-weight: 700;
+            transition: all 0.5s ease-in-out;
+        }
+        .cert-subtitle {
+            font-size: 1.2em;
+            color: #555;
+            margin-bottom: 10px;
+        }
+        .cert-recipient {
+            font-family: 'Playfair Display', serif; /* Usaremos 'Great Vibes' para la clásica */
+            font-size: 3em;
+            color: #000;
+            margin: 5px 0 20px 0;
+            padding-bottom: 5px;
+            border-bottom: 1px solid var(--secondary-color);
+            display: inline-block;
+            transition: all 0.5s ease-in-out;
+        }
+        .cert-body-text {
+            max-width: 80%;
+            margin: 0 auto;
+            font-size: 1.1em;
+            color: #444;
+            text-align: center;
+        }
+
+        /* Pie de página (Firmas y Fecha) (Mismo que antes) */
+        .cert-footer {
+            display: flex;
+            justify-content: space-evenly;
+            align-items: flex-end;
+            margin-top: 40px;
+            padding: 0 2%;
+            z-index: 2;
+        }
+        .cert-signature-block {
+            flex: 1;
+            text-align: center;
+            max-width: 250px;
+            margin-right: 10px;
+        }
+
+        .signature-image-container {
+            height: 80px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            position: relative;
+            margin-bottom: -15px;
+        }
+        .signature-image {
+            max-height: 100%;
+            width: auto;
+            max-width: 180px;
+            object-fit: contain;
+            filter: drop-shadow(0 0 1px rgba(0,0,0,0.2));
+        }
+
+        .signature-line {
+            border-top: 2px solid #333;
+            height: 1px;
+            width: 80%;
+            margin: 15px auto 5px auto;
+        }
+        .signature-name {
+            font-weight: 600;
+            font-size: 1.1em;
+            color: var(--primary-color);
+            transition: all 0.5s ease-in-out;
+        }
+        .signature-title {
+            font-size: 0.9em;
+            color: #777;
+            transition: all 0.5s ease-in-out;
+        }
+
+        /* ESTILO DEL BLOQUE QR (Mismo que antes) */
+        .cert-qr-block {
+            position: absolute;
+            bottom: var(--cert-inner-margin);
+            right: var(--cert-inner-margin);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+            z-index: 2;
+        }
+        .qr-label {
+            font-size: 0.8em;
+            color: var(--primary-color);
+            font-weight: 600;
+            margin-top: 5px;
+            transition: all 0.5s ease-in-out;
+        }
+        #qrcode {
+            width: 80px;
+            height: 80px;
+            padding: 5px;
+            background: white;
+            border: 2px solid var(--primary-color);
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+            transition: all 0.5s ease-in-out;
+        }
+
+        /* Media Queries (Mismo que antes) */
+        @media (max-width: 600px) {
+            .container { flex-direction: column; }
+            .cert-qr-block {
+                bottom: 10px;
+                right: 10px;
+            }
+            .cert-company-name {
+                top: 20px;
+                left: 10px;
+                font-size: 1.2em;
+            }
+            .cert-title { margin-top: 60px;}
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="control-panel">
+            <h2>Panel de Personalización</h2>
+            
+            <div class="excel-batch-section">
+                <h3>🚀 Generación en Lote (Excel)</h3>
+                <div class="form-group">
+                    <label for="excel-file-input">Sube Archivo de Datos (.xlsx o .csv)</label>
+                    <input type="file" id="excel-file-input" accept=".xlsx, .xls, .csv">
+                    <small style="color: #666; display: block; margin-top: 5px;">
+                        **El archivo debe tener una columna llamada "NOMBRE"** (u otra que mapearemos).
+                    </small>
+                </div>
+                <button class="btn-generate btn-batch" onclick="processExcelFile()">Procesar Archivo y Generar Lote</button>
+            </div>
+            
+            <div class="form-group">
+                <label for="template-selector">Seleccionar Plantilla</label>
+                <select id="template-selector" onchange="applyTemplate()">
+                    <option value="professional">Profesional (Azul/Oro)</option>
+                    <option value="classic">Clásica (Gris/Rojo)</option>
+                    <option value="modern">Moderna (Verde/Minimalista)</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="input-title">Título del Certificado</label>
+                <input type="text" id="input-title" value="CERTIFICADO DE LOGRO" oninput="updateCertificate()">
+            </div>
+            <div class="form-group">
+                <label for="input-subtitle">Lema / Frase de Concesión</label>
+                <input type="text" id="input-subtitle" value="Se otorga este reconocimiento a:" oninput="updateCertificate()">
+            </div>
+            <div class="form-group">
+                <label for="input-name">Nombre del Receptor (Manual)</label>
+                <input type="text" id="input-name" value="Nombre Apellido" oninput="updateCertificate()">
+            </div>
+            <div class="form-group">
+                <label for="input-text">Cuerpo del Texto (Motivo)</label>
+                <textarea id="input-text" oninput="updateCertificate()">La entidad certificadora reconoce a [Nombre Apellido] por su participación y conclusión exitosa del programa de capacitación en Liderazgo Estratégico, demostrando un compromiso inigualable con la excelencia y el desarrollo profesional.</textarea>
+            </div>
+            <div class="form-group">
+                <label for="input-signature-name-1">Nombre del Firmante Principal</label>
+                <input type="text" id="input-signature-name-1" value="Dr. J. K. Doe" oninput="updateCertificate()">
+            </div>
+            <div class="form-group">
+                <label for="input-signature-title-1">Cargo/Designación Principal</label>
+                <input type="text" id="input-signature-title-1" value="Director Ejecutivo" oninput="updateCertificate()">
+            </div>
+            <div class="form-group">
+                <label for="input-signature-name-2">Nombre del Segundo Firmante (opcional)</label>
+                <input type="text" id="input-signature-name-2" value="Coordinador del Programa" oninput="updateCertificate()">
+            </div>
+            <div class="form-group">
+                <label for="input-signature-title-2">Cargo/Designación Segundo Firmante</label>
+                <input type="text" id="input-signature-title-2" value="Jefe de Departamento" oninput="updateCertificate()">
+            </div>
+            <div class="form-group">
+                <label for="input-date">Fecha de Emisión</label>
+                <input type="date" id="input-date" value="2025-11-17" onchange="updateCertificate()">
+            </div>
+            <button class="btn-generate" onclick="generateCertificate()">Generar y Descargar Certificado (Vista Previa)</button>
+        </div>
+
+        <div class="certificate-area">
+            <div id="certificate-output" class="certificate-wrapper">
+                
+                <div id="cert-company" class="cert-company-name">MST CERTIFICA</div>
+                
+                <h1 id="output-title" class="cert-title">CERTIFICADO DE LOGRO</h1>
+                <div id="output-subtitle" class="cert-subtitle">Se otorga este reconocimiento a:</div>
+                <div id="output-name" class="cert-recipient">Nombre Apellido</div>
+                <p id="output-text" class="cert-body-text">La entidad certificadora reconoce a Nombre Apellido por su participación y conclusión exitosa del programa de capacitación en Liderazgo Estratégico, demostrando un compromiso inigualable con la excelencia y el desarrollo profesional.</p>
+                
+                <div class="cert-footer">
+                    <div class="cert-signature-block">
+                        <div class="signature-image-container">
+                            <img id="output-signature-img-1" class="signature-image" src="https://i.ibb.co/L8m7fF7/firma-ejemplo.png" alt="Firma Principal">
+                        </div>
+                        <div class="signature-line"></div>
+                        <div id="output-signature-name-1" class="signature-name">Dr. J. K. Doe</div>
+                        <div id="output-signature-title-1" class="signature-title">Director Ejecutivo</div>
+                    </div>
+                    
+                    <div class="cert-signature-block">
+                        <div class="signature-image-container">
+                            <img id="output-signature-img-2" class="signature-image" src="https://i.ibb.co/L8m7fF7/firma-ejemplo.png" alt="Firma Secundaria">
+                        </div>
+                        <div class="signature-line"></div>
+                        <div id="output-signature-name-2" class="signature-name">Coordinador del Programa</div>
+                        <div id="output-signature-title-2" class="signature-title">Jefe de Departamento</div>
+                        <div id="output-date" class="signature-title" style="margin-top: 5px;">17 de Noviembre de 2025</div>
+                    </div>
+                </div>
+
+                <div class="cert-qr-block">
+                    <div id="qrcode"></div>
+                    <div class="qr-label">Escanee para verificar (ID: 000000)</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Objeto con las definiciones de las plantillas (Mismo que antes)
+        const templates = {
+            professional: {
+                className: '',
+                styles: {
+                    '--primary-color': '#004d99',
+                    '--secondary-color': '#ffd700',
+                    '--font-body': "'Poppins', sans-serif",
+                    '--font-display': "'Playfair Display', serif",
+                    '--border-style-main': '5px solid var(--secondary-color)',
+                    '--border-style-outline': '5px solid var(--primary-color)',
+                    '--cert-padding': '5%',
+                    '--cert-inner-margin': '5%' 
+                }
+            },
+            classic: {
+                className: 'template-classic',
+                styles: {
+                    '--primary-color': '#8B0000',
+                    '--secondary-color': '#A00',
+                    '--font-body': "'Times New Roman', serif",
+                    '--font-display': "'Playfair Display', serif",
+                    '--cert-padding': '6%',
+                    '--cert-inner-margin': '6%'
+                }
+            },
+            modern: {
+                className: 'template-modern',
+                styles: {
+                    '--primary-color': '#2E8B57',
+                    '--secondary-color': '#3CB371',
+                    '--font-body': "'Poppins', sans-serif",
+                    '--font-display': "'Poppins', sans-serif",
+                    '--cert-padding': '4%',
+                    '--cert-inner-margin': '4%'
+                }
+            }
+        };
+
+        // Función para aplicar la plantilla seleccionada (Mismo que antes)
+        function applyTemplate() {
+            const selector = document.getElementById('template-selector');
+            const selectedTemplateKey = selector.value;
+            const template = templates[selectedTemplateKey];
+            const root = document.documentElement;
+            const certificateWrapper = document.getElementById('certificate-output');
+
+            // Limpiar clases de plantilla anteriores
+            certificateWrapper.classList.remove('template-professional', 'template-classic', 'template-modern');
+            if (template.className) {
+                certificateWrapper.classList.add(template.className);
+            }
+
+            // Aplicar variables CSS
+            for (const [prop, value] of Object.entries(template.styles)) {
+                root.style.setProperty(prop, value);
+            }
+
+            // Forzar actualización del certificado después de aplicar estilos
+            updateCertificate();
+        }
+
+        // Función para generar un ID simulado de 6 dígitos (Mismo que antes)
+        function generateUniqueId() {
+            return Math.random().toString(36).substring(2, 8).toUpperCase();
+        }
+
+        // Función para generar el Código QR (Mismo que antes)
+        function generateQRCode(recipientName, uniqueId) {
+            uniqueId = uniqueId || generateUniqueId(); // Usa un ID proporcionado o genera uno
+            const verificationUrl = `https://verifymst.com/cert?id=${uniqueId}&name=${encodeURIComponent(recipientName)}`;
+            
+            const qrElement = document.getElementById("qrcode");
+            qrElement.innerHTML = ""; 
+
+            document.querySelector('.qr-label').textContent = `Escanee para verificar (ID: ${uniqueId})`;
+
+            new QRCode(qrElement, {
+                text: verificationUrl,
+                width: 80,
+                height: 80,
+                colorDark : "#000000",
+                colorLight : "#ffffff",
+                correctLevel : QRCode.CorrectLevel.H
+            });
+            return uniqueId;
+        }
+        
+
+        // Función principal para actualizar el contenido del certificado en tiempo real (Mismo que antes)
+        function updateCertificate(nameOverride = null, uniqueIdOverride = null) {
+            // Obtener valores de los inputs
+            const title = document.getElementById('input-title').value.toUpperCase();
+            const subtitle = document.getElementById('input-subtitle').value;
+            const name = nameOverride || document.getElementById('input-name').value || 'NOMBRE DEL RECEPTOR';
+            let text = document.getElementById('input-text').value;
+            const signatureName1 = document.getElementById('input-signature-name-1').value;
+            const signatureTitle1 = document.getElementById('input-signature-title-1').value;
+            const signatureName2 = document.getElementById('input-signature-name-2').value;
+            const signatureTitle2 = document.getElementById('input-signature-title-2').value;
+            const date = document.getElementById('input-date').value;
+
+            // Reemplazo del placeholder en el texto
+            text = text.replace(/\[Nombre Apellido\]/g, name);
+
+            // Formatear la fecha
+            let formattedDate = '';
+            if (date) {
+                const dateObj = new Date(date + 'T00:00:00'); 
+                formattedDate = dateObj.toLocaleDateString('es-ES', {
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric'
+                });
+            } else {
+                 formattedDate = 'FECHA';
+            }
+
+            // Actualizar elementos de la previsualización
+            document.getElementById('output-title').textContent = title;
+            document.getElementById('output-subtitle').textContent = subtitle;
+            document.getElementById('output-name').textContent = name;
+            document.getElementById('output-text').textContent = text;
+            
+            // ACTUALIZACIÓN DE FIRMA 1
+            document.getElementById('output-signature-name-1').textContent = signatureName1;
+            document.getElementById('output-signature-title-1').textContent = signatureTitle1;
+
+            // ACTUALIZACIÓN DE FIRMA 2 (Fecha)
+            document.getElementById('output-signature-name-2').textContent = signatureName2;
+            document.getElementById('output-signature-title-2').textContent = signatureTitle2;
+            document.getElementById('output-date').textContent = formattedDate;
+
+            // Llamada a la función de generación de QR
+            generateQRCode(name, uniqueIdOverride); 
+        }
+
+        // Función para simular la generación y descarga (Manual)
+        function generateCertificate() {
+            // Aquí llamarías a una librería como html2canvas o jsPDF para generar el PDF de la vista previa
+            alert('Generación iniciada para la vista previa. (En un entorno real, se generaría el PDF aquí.)');
+        }
+
+
+        // **********************************************
+        // NUEVAS FUNCIONES PARA PROCESAR EL ARCHIVO EXCEL
+        // **********************************************
+
+        function processExcelFile() {
+            const fileInput = document.getElementById('excel-file-input');
+            const file = fileInput.files[0];
+
+            if (!file) {
+                alert('Por favor, selecciona un archivo de Excel (.xlsx, .xls) o CSV.');
+                return;
+            }
+
+            const reader = new FileReader();
+
+            reader.onload = function(e) {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                
+                // Asumimos que la primera hoja es la que contiene los datos
+                const sheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[sheetName];
+                
+                // Convertir la hoja a un array de objetos (JSON)
+                const json = XLSX.utils.sheet_to_json(worksheet);
+
+                if (json.length === 0) {
+                    alert('El archivo Excel está vacío o no tiene datos reconocibles.');
+                    return;
+                }
+
+                // **Simulación de Mapeo y Generación en Lote**
+                const totalCertificados = json.length;
+                let generatedCount = 0;
+                
+                // Buscar la columna 'NOMBRE' o la primera columna disponible para el nombre del receptor
+                const nameKey = findNameColumn(json[0]);
+                if (!nameKey) {
+                    alert('Error: No se encontró una columna válida para el nombre del receptor (se esperaba "NOMBRE").');
+                    return;
+                }
+                
+                const results = []; // Array para almacenar los metadatos de los certificados generados
+                
+                alert(`Archivo cargado exitosamente. Se encontraron ${totalCertificados} registros. Iniciando la generación en lote...`);
+
+                json.forEach(row => {
+                    const recipientName = row[nameKey];
+
+                    if (recipientName) {
+                        // 1. **ACTUALIZAR LA VISTA PREVIA**
+                        // Esto simularía la creación de un único certificado a la vez.
+                        // Usamos updateCertificate para aplicar los valores de la fila actual.
+                        // Nota: La vista previa solo mostrará el ÚLTIMO certificado generado.
+                        updateCertificate(recipientName); 
+                        
+                        // 2. **SIMULACIÓN DE GENERACIÓN DE ARCHIVO (PDF/Imagen)**
+                        // En un entorno real, aquí se llamaría a la librería de captura de pantalla (html2canvas, etc.)
+                        // para guardar la imagen o PDF del div 'certificate-output'.
+                        
+                        // 3. **REGISTRO DE METADATOS**
+                        // Obtenemos el ID de QR generado por el updateCertificate
+                        const uniqueId = document.querySelector('.qr-label').textContent.match(/\(([^)]+)\)/)[1].replace('ID: ', '');
+
+                        results.push({
+                            Nombre: recipientName,
+                            Estado: 'Generado OK',
+                            ID_Certificado: uniqueId,
+                            Fecha: document.getElementById('output-date').textContent
+                            // Aquí podrías añadir cualquier otra columna del Excel si es relevante para el registro
+                        });
+                        
+                        generatedCount++;
+
+                        // SIMULACIÓN DE DESCARGA ZIP (opcional, muy avanzado)
+                        // Si quisieras descargar todos los PDFs/Imágenes, usarías una librería de compresión ZIP.
+                        
+                    } else {
+                        results.push({ Nombre: 'No disponible', Estado: 'Error: Nombre vacío' });
+                    }
+                });
+
+                if (generatedCount > 0) {
+                    alert(`Generación completada. Se crearon ${generatedCount} de ${totalCertificados} certificados. Se generará un archivo de registro.`);
+                    
+                    // Generar y descargar el archivo de registro (resumen)
+                    downloadLogFile(results);
+
+                } else if (totalCertificados > 0) {
+                    alert('No se pudo generar ningún certificado. Verifica que la columna "NOMBRE" no esté vacía.');
+                }
+            };
+
+            reader.onerror = function(ex) {
+                console.error(ex);
+                alert('Ocurrió un error al leer el archivo. Asegúrate de que sea un archivo de Excel o CSV válido.');
+            };
+
+            // Leer el archivo como un Array Buffer
+            reader.readAsArrayBuffer(file);
+        }
+
+        // Función auxiliar para buscar la columna de nombre en el Excel
+        function findNameColumn(firstRow) {
+            if (!firstRow) return null;
+            
+            // Prioridad 1: Columna llamada 'NOMBRE'
+            if (firstRow.hasOwnProperty('NOMBRE')) return 'NOMBRE';
+            if (firstRow.hasOwnProperty('Nombre')) return 'Nombre';
+            
+            // Prioridad 2: La primera columna que no sea un ID o número
+            for (const key in firstRow) {
+                if (typeof firstRow[key] === 'string' && firstRow[key].length > 0) {
+                    return key; // Devuelve la primera columna de texto
+                }
+            }
+            return null;
+        }
+
+        // Función para generar y descargar un archivo de registro (CSV)
+        function downloadLogFile(data) {
+            if (data.length === 0) return;
+
+            // Convertir el JSON de resultados a formato CSV
+            const header = Object.keys(data[0]);
+            let csv = header.join(',') + '\n';
+
+            data.forEach(row => {
+                const values = header.map(key => {
+                    const value = row[key] || '';
+                    // Escapar comas y comillas dobles para CSV
+                    return `"${value.toString().replace(/"/g, '""')}"`;
+                });
+                csv += values.join(',') + '\n';
+            });
+            
+            // Crear el Blob y usar FileSaver.js
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            saveAs(blob, `Registro_Certificados_${new Date().toISOString().slice(0, 10)}.csv`);
+        }
+
+        // Inicializar la página (Mismo que antes)
+        window.onload = function() {
+            // Cargar la primera plantilla al inicio
+            applyTemplate();
+            // Asegurarse de que el certificado se actualice con los valores iniciales
+            updateCertificate();
+        };
+    </script>
+
+</body>
+</html>

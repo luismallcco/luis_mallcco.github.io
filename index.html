@@ -1,0 +1,1090 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Certificados MST</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Poppins:wght@300;400;600&family=Great+Vibes&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-color: #004d99;
+            --secondary-color: #ffd700;
+            --success-color: #28a745;
+            --danger-color: #dc3545;
+            --background-light: #f7f9fb;
+            --background-card: #ffffff;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--background-light);
+            color: #333;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, var(--primary-color), #0066cc);
+            color: white;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+            font-family: 'Playfair Display', serif;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .btn {
+            padding: 0.6rem 1.2rem;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+            font-size: 0.95rem;
+        }
+
+        .btn-primary {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #003366;
+        }
+
+        .btn-success {
+            background: var(--success-color);
+            color: white;
+        }
+
+        .btn-danger {
+            background: var(--danger-color);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        /* Login Page */
+        .login-container {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, var(--primary-color), #0066cc);
+        }
+
+        .login-box {
+            background: white;
+            padding: 3rem;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .login-box h2 {
+            font-family: 'Playfair Display', serif;
+            color: var(--primary-color);
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #555;
+        }
+
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 0.8rem;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 1rem;
+        }
+
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            border-color: var(--primary-color);
+            outline: none;
+        }
+
+        /* Dashboard */
+        .dashboard {
+            padding: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .nav-tabs {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            border-bottom: 2px solid #ddd;
+        }
+
+        .nav-tab {
+            padding: 1rem 1.5rem;
+            background: none;
+            border: none;
+            border-bottom: 3px solid transparent;
+            cursor: pointer;
+            font-weight: 600;
+            color: #666;
+            transition: all 0.3s;
+        }
+
+        .nav-tab.active {
+            color: var(--primary-color);
+            border-bottom-color: var(--primary-color);
+        }
+
+        .card {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            margin-bottom: 2rem;
+        }
+
+        .card h3 {
+            color: var(--primary-color);
+            margin-bottom: 1.5rem;
+            font-family: 'Playfair Display', serif;
+        }
+
+        /* Table */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        table th, table td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+
+        table th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        table tr:hover {
+            background: #f8f9fa;
+        }
+
+        /* Certificate Preview */
+        .certificate-wrapper {
+            width: 100%;
+            max-width: 800px;
+            aspect-ratio: 1.414 / 1;
+            background-color: #fffff8;
+            border: 1px solid #ddd;
+            padding: 5%;
+            position: relative;
+            text-align: center;
+            margin: 2rem auto;
+        }
+
+        .certificate-wrapper::before {
+            content: '';
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            right: 15px;
+            bottom: 15px;
+            border: 5px solid var(--secondary-color);
+            outline: 5px solid var(--primary-color);
+            outline-offset: -15px;
+        }
+
+        .cert-company-name {
+            position: absolute;
+            top: 50px;
+            left: 5%;
+            font-size: 1.5em;
+            font-weight: 700;
+            color: var(--primary-color);
+            letter-spacing: 2px;
+            text-decoration: underline;
+            text-decoration-color: var(--secondary-color);
+            z-index: 2;
+        }
+
+        .cert-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 3em;
+            color: var(--primary-color);
+            margin-top: 80px;
+            margin-bottom: 5px;
+            font-weight: 700;
+        }
+
+        .cert-subtitle {
+            font-size: 1.2em;
+            color: #555;
+            margin-bottom: 10px;
+        }
+
+        .cert-recipient {
+            font-family: 'Playfair Display', serif;
+            font-size: 2.5em;
+            color: #000;
+            margin: 5px 0 20px 0;
+            padding-bottom: 5px;
+            border-bottom: 1px solid var(--secondary-color);
+            display: inline-block;
+        }
+
+        .cert-body-text {
+            max-width: 80%;
+            margin: 0 auto;
+            font-size: 1.1em;
+            color: #444;
+            text-align: center;
+        }
+
+        .cert-footer {
+            display: flex;
+            justify-content: space-evenly;
+            align-items: flex-end;
+            margin-top: 40px;
+            padding: 0 2%;
+            z-index: 2;
+        }
+
+        .cert-signature-block {
+            flex: 1;
+            text-align: center;
+            max-width: 250px;
+        }
+
+        .signature-line {
+            border-top: 2px solid #333;
+            height: 1px;
+            width: 80%;
+            margin: 15px auto 5px auto;
+        }
+
+        .signature-name {
+            font-weight: 600;
+            font-size: 1.1em;
+            color: var(--primary-color);
+        }
+
+        .signature-title {
+            font-size: 0.9em;
+            color: #777;
+        }
+
+        .cert-qr-block {
+            position: absolute;
+            bottom: 5%;
+            right: 5%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+            z-index: 2;
+        }
+
+        .qr-label {
+            font-size: 0.7em;
+            color: var(--primary-color);
+            font-weight: 600;
+            margin-top: 5px;
+        }
+
+        #qrcode {
+            width: 80px;
+            height: 80px;
+            padding: 5px;
+            background: white;
+            border: 2px solid var(--primary-color);
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+
+        .modal.active {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 2rem;
+            cursor: pointer;
+            color: #999;
+        }
+
+        /* Verify Page */
+        .verify-container {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+        }
+
+        .verify-box {
+            background: white;
+            padding: 3rem;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            max-width: 600px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .verify-box h2 {
+            color: var(--primary-color);
+            margin-bottom: 1.5rem;
+        }
+
+        .certificate-info {
+            background: #f8f9fa;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin-top: 2rem;
+            text-align: left;
+        }
+
+        .certificate-info p {
+            margin: 0.5rem 0;
+        }
+
+        .alert {
+            padding: 1rem;
+            border-radius: 6px;
+            margin-bottom: 1rem;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-danger {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .file-upload-zone {
+            border: 2px dashed #ddd;
+            padding: 2rem;
+            text-align: center;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .file-upload-zone:hover {
+            border-color: var(--primary-color);
+            background: #f8f9fa;
+        }
+
+        @media (max-width: 768px) {
+            .cert-title { font-size: 2em; margin-top: 60px; }
+            .cert-recipient { font-size: 1.8em; }
+            .cert-footer { flex-direction: column; gap: 1rem; }
+            .nav-tabs { flex-wrap: wrap; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Login View -->
+    <div id="loginView" class="login-container">
+        <div class="login-box">
+            <h2>🎓 Sistema MST Certifica</h2>
+            <p style="text-align: center; color: #666; margin-bottom: 2rem;">Acceso Administrativo</p>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label>Usuario</label>
+                    <input type="text" id="loginUsername" placeholder="admin" required>
+                </div>
+                <div class="form-group">
+                    <label>Contraseña</label>
+                    <input type="password" id="loginPassword" placeholder="admin123" required>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">Iniciar Sesión</button>
+                <p style="margin-top: 1rem; text-align: center; font-size: 0.9rem; color: #999;">
+                    Usuario demo: admin / admin123
+                </p>
+            </form>
+        </div>
+    </div>
+
+    <!-- Dashboard View -->
+    <div id="dashboardView" class="hidden">
+        <div class="header">
+            <h1>🎓 MST CERTIFICA - Panel Administrativo</h1>
+            <div class="user-info">
+                <span id="usernameDisplay">Admin</span>
+                <button class="btn btn-danger" onclick="logout()">Cerrar Sesión</button>
+            </div>
+        </div>
+
+        <div class="dashboard">
+            <div class="nav-tabs">
+                <button class="nav-tab active" onclick="showTab('students')">Gestionar Alumnos</button>
+                <button class="nav-tab" onclick="showTab('certificates')">Generar Certificados</button>
+                <button class="nav-tab" onclick="showTab('issued')">Certificados Emitidos</button>
+            </div>
+
+            <!-- Students Tab -->
+            <div id="studentsTab" class="tab-content">
+                <div class="card">
+                    <h3>Agregar Alumno Individual</h3>
+                    <form id="studentForm">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                            <div class="form-group">
+                                <label>Nombre Completo *</label>
+                                <input type="text" id="studentName" required>
+                            </div>
+                            <div class="form-group">
+                                <label>DNI *</label>
+                                <input type="text" id="studentDNI" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Email</label>
+                                <input type="email" id="studentEmail">
+                            </div>
+                            <div class="form-group">
+                                <label>Curso</label>
+                                <input type="text" id="studentCourse">
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-success">Agregar Alumno</button>
+                    </form>
+                </div>
+
+                <div class="card">
+                    <h3>Importar desde Excel</h3>
+                    <div class="file-upload-zone" onclick="document.getElementById('excelFile').click()">
+                        <p>📄 Haz clic para subir archivo Excel (.xlsx, .xls, .csv)</p>
+                        <p style="font-size: 0.9rem; color: #666;">Columnas requeridas: NOMBRE, DNI</p>
+                        <input type="file" id="excelFile" accept=".xlsx,.xls,.csv" style="display: none;" onchange="importExcel()">
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3>Lista de Alumnos</h3>
+                    <table id="studentsTable">
+                        <thead>
+                            <tr>
+                                <th>Nombre</th>
+                                <th>DNI</th>
+                                <th>Email</th>
+                                <th>Curso</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="studentsTableBody">
+                            <tr>
+                                <td colspan="5" style="text-align: center; color: #999;">No hay alumnos registrados</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Certificates Tab -->
+            <div id="certificatesTab" class="tab-content hidden">
+                <div class="card">
+                    <h3>Configuración del Certificado</h3>
+                    <form id="certConfigForm">
+                        <div class="form-group">
+                            <label>Plantilla</label>
+                            <select id="templateSelect">
+                                <option value="professional">Profesional (Azul/Oro)</option>
+                                <option value="classic">Clásica (Gris/Rojo)</option>
+                                <option value="modern">Moderna (Verde)</option>
+                            </select>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                            <div class="form-group">
+                                <label>Título</label>
+                                <input type="text" id="certTitle" value="CERTIFICADO DE LOGRO">
+                            </div>
+                            <div class="form-group">
+                                <label>Subtítulo</label>
+                                <input type="text" id="certSubtitle" value="Se otorga este reconocimiento a:">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Cuerpo del Texto</label>
+                            <textarea id="certBody" rows="3">Por su participación y conclusión exitosa del programa de capacitación, demostrando un compromiso inigualable con la excelencia y el desarrollo profesional.</textarea>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                            <div class="form-group">
+                                <label>Firmante 1 - Nombre</label>
+                                <input type="text" id="sign1Name" value="Dr. J. K. Doe">
+                            </div>
+                            <div class="form-group">
+                                <label>Firmante 1 - Cargo</label>
+                                <input type="text" id="sign1Title" value="Director Ejecutivo">
+                            </div>
+                            <div class="form-group">
+                                <label>Firmante 2 - Nombre</label>
+                                <input type="text" id="sign2Name" value="Coordinador del Programa">
+                            </div>
+                            <div class="form-group">
+                                <label>Firmante 2 - Cargo</label>
+                                <input type="text" id="sign2Title" value="Jefe de Departamento">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Fecha</label>
+                            <input type="date" id="certDate">
+                        </div>
+                    </form>
+                </div>
+
+                <div class="card">
+                    <h3>Generar Certificados</h3>
+                    <div class="btn-group">
+                        <button class="btn btn-primary" onclick="generateBatchCertificates()">Generar para Todos los Alumnos</button>
+                        <button class="btn btn-secondary" onclick="showCertificatePreview()">Vista Previa</button>
+                    </div>
+                    <p style="margin-top: 1rem; color: #666;">
+                        Se generarán <strong id="studentCount">0</strong> certificados con enlaces únicos y códigos QR
+                    </p>
+                </div>
+
+                <div id="certificatePreview" class="hidden">
+                    <div class="card">
+                        <h3>Vista Previa del Certificado</h3>
+                        <div id="certificateContainer"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Issued Certificates Tab -->
+            <div id="issuedTab" class="tab-content hidden">
+                <div class="card">
+                    <h3>Certificados Emitidos</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Alumno</th>
+                                <th>DNI</th>
+                                <th>Fecha Emisión</th>
+                                <th>Enlace</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="issuedTableBody">
+                            <tr>
+                                <td colspan="6" style="text-align: center; color: #999;">No hay certificados emitidos</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Verify Certificate View -->
+    <div id="verifyView" class="hidden">
+        <div class="verify-container">
+            <div class="verify-box">
+                <h2>🔐 Verificar Certificado</h2>
+                <p>Ingrese su DNI para acceder al certificado</p>
+                
+                <form id="verifyForm">
+                    <div class="form-group">
+                        <label>Número de DNI</label>
+                        <input type="text" id="verifyDNI" placeholder="12345678" required>
+                    </div>
+                    <input type="hidden" id="verifyCertId">
+                    <button type="submit" class="btn btn-primary" style="width: 100%;">Verificar y Ver Certificado</button>
+                </form>
+
+                <div id="verifyResult" class="hidden"></div>
+
+                <button class="btn btn-secondary" onclick="backToLogin()" style="width: 100%; margin-top: 1rem;">Volver</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Data Storage
+        let students = [];
+        let certificates = [];
+        let currentUser = null;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            loadFromStorage();
+            document.getElementById('certDate').valueAsDate = new Date();
+            updateStudentCount();
+
+            // Check if accessing via certificate link
+            const urlParams = new URLSearchParams(window.location.search);
+            const certId = urlParams.get('cert');
+            if (certId) {
+                showVerifyView(certId);
+            }
+        });
+
+        // Login
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const username = document.getElementById('loginUsername').value;
+            const password = document.getElementById('loginPassword').value;
+
+            if (username === 'admin' && password === 'admin123') {
+                currentUser = { username: 'admin', role: 'admin' };
+                document.getElementById('usernameDisplay').textContent = username;
+                showView('dashboard');
+            } else {
+                alert('Credenciales incorrectas. Intente con: admin / admin123');
+            }
+        });
+
+        function logout() {
+            currentUser = null;
+            showView('login');
+        }
+
+        function showView(view) {
+            document.getElementById('loginView').classList.add('hidden');
+            document.getElementById('dashboardView').classList.add('hidden');
+            document.getElementById('verifyView').classList.add('hidden');
+
+            if (view === 'login') {
+                document.getElementById('loginView').classList.remove('hidden');
+            } else if (view === 'dashboard') {
+                document.getElementById('dashboardView').classList.remove('hidden');
+            } else if (view === 'verify') {
+                document.getElementById('verifyView').classList.remove('hidden');
+            }
+        }
+
+        function showTab(tab) {
+            document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
+
+            event.target.classList.add('active');
+            document.getElementById(tab + 'Tab').classList.remove('hidden');
+
+            if (tab === 'certificates') {
+                updateStudentCount();
+            } else if (tab === 'issued') {
+                renderIssuedCertificates();
+            }
+        }
+
+        // Student Management
+        document.getElementById('studentForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const student = {
+                id: Date.now(),
+                nombre: document.getElementById('studentName').value,
+                dni: document.getElementById('studentDNI').value,
+                email: document.getElementById('studentEmail').value || '',
+                curso: document.getElementById('studentCourse').value || ''
+            };
+
+            students.push(student);
+            saveToStorage();
+            renderStudentsTable();
+            this.reset();
+            alert('Alumno agregado exitosamente');
+        });
+
+        function renderStudentsTable() {
+            const tbody = document.getElementById('studentsTableBody');
+            if (students.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: #999;">No hay alumnos registrados</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = students.map(s => `
+                <tr>
+                    <td>${s.nombre}</td>
+                    <td>${s.dni}</td>
+                    <td>${s.email}</td>
+                    <td>${s.curso}</td>
+                    <td>
+                        <button class="btn btn-danger" style="padding: 0.4rem 0.8rem;" onclick="deleteStudent(${s.id})">Eliminar</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function deleteStudent(id) {
+            if (confirm('¿Está seguro de eliminar este alumno?')) {
+                students = students.filter(s => s.id !== id);
+                saveToStorage();
+                renderStudentsTable();
+            }
+        }
+
+        function importExcel() {
+            const file = document.getElementById('excelFile').files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const sheet = workbook.Sheets[workbook.SheetNames[0]];
+                const json = XLSX.utils.sheet_to_json(sheet);
+
+                let imported = 0;
+                json.forEach(row => {
+                    const nombre = row.NOMBRE || row.Nombre || row.nombre || row.APELLIDOS || '';
+                    const dni = row.DNI || row.dni || row.DOCUMENTO || row.documento || '';
+
+                    if (nombre && dni) {
+                        students.push({
+                            id: Date.now() + Math.random(),
+                            nombre: nombre.toString(),
+                            dni: dni.toString(),
+                            email: row.EMAIL || row.email || '',
+                            curso: row.CURSO || row.curso || ''
+                        });
+                        imported++;
+                    }
+                });
+
+                saveToStorage();
+                renderStudentsTable();
+                alert(`Se importaron ${imported} alumnos exitosamente`);
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function updateStudentCount() {
+            document.getElementById('studentCount').textContent = students.length;
+        }
+
+        // Certificate Generation
+        function generateBatchCertificates() {
+            if (students.length === 0) {
+                alert('No hay alumnos registrados. Por favor agregue alumnos primero.');
+                return;
+            }
+
+            if (!confirm(`¿Generar ${students.length} certificados?`)) return;
+
+            const config = getCertificateConfig();
+            let generated = 0;
+
+            students.forEach(student => {
+                const certId = generateId();
+                const cert = {
+                    id: certId,
+                    studentId: student.id,
+                    studentName: student.nombre,
+                    studentDNI: student.dni,
+                    date: new Date().toISOString(),
+                    config: config,
+                    url: `${window.location.origin}${window.location.pathname}?cert=${certId}`
+                };
+
+                certificates.push(cert);
+                generated++;
+            });
+
+            saveToStorage();
+            alert(`Se generaron ${generated} certificados exitosamente`);
+            showTab('issued');
+        }
+
+        function getCertificateConfig() {
+            return {
+                template: document.getElementById('templateSelect').value,
+                title: document.getElementById('certTitle').value,
+                subtitle: document.getElementById('certSubtitle').value,
+                body: document.getElementById('certBody').value,
+                sign1Name: document.getElementById('sign1Name').value,
+                sign1Title: document.getElementById('sign1Title').value,
+                sign2Name: document.getElementById('sign2Name').value,
+                sign2Title: document.getElementById('sign2Title').value,
+                date: document.getElementById('certDate').value
+            };
+        }
+
+        function showCertificatePreview() {
+            if (students.length === 0) {
+                alert('No hay alumnos para previsualizar');
+                return;
+            }
+
+            const config = getCertificateConfig();
+            const student = students[0];
+
+            document.getElementById('certificatePreview').classList.remove('hidden');
+            renderCertificate(student.nombre, config, 'preview', 'certificateContainer');
+        }
+
+        function renderCertificate(studentName, config, certId, containerId) {
+            const container = document.getElementById(containerId);
+            const certUrl = certId === 'preview' ? 'URL_EJEMPLO' : `${window.location.origin}${window.location.pathname}?cert=${certId}`;
+
+            const dateObj = new Date(config.date);
+            const formattedDate = dateObj.toLocaleDateString('es-ES', {
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric'
+            });
+
+            container.innerHTML = `
+                <div class="certificate-wrapper" id="cert-${certId}">
+                    <div class="cert-company-name">MST CERTIFICA</div>
+                    <h1 class="cert-title">${config.title}</h1>
+                    <div class="cert-subtitle">${config.subtitle}</div>
+                    <div class="cert-recipient">${studentName}</div>
+                    <p class="cert-body-text">${config.body}</p>
+                    
+                    <div class="cert-footer">
+                        <div class="cert-signature-block">
+                            <div class="signature-line"></div>
+                            <div class="signature-name">${config.sign1Name}</div>
+                            <div class="signature-title">${config.sign1Title}</div>
+                        </div>
+                        <div class="cert-signature-block">
+                            <div class="signature-line"></div>
+                            <div class="signature-name">${config.sign2Name}</div>
+                            <div class="signature-title">${config.sign2Title}</div>
+                            <div class="signature-title" style="margin-top: 5px;">${formattedDate}</div>
+                        </div>
+                    </div>
+
+                    <div class="cert-qr-block">
+                        <div id="qrcode-${certId}"></div>
+                        <div class="qr-label">ID: ${certId}</div>
+                    </div>
+                </div>
+            `;
+
+            setTimeout(() => {
+                generateQR(certUrl, `qrcode-${certId}`);
+            }, 100);
+        }
+
+        function generateQR(url, elementId) {
+            const element = document.getElementById(elementId);
+            if (!element) return;
+            element.innerHTML = '';
+            new QRCode(element, {
+                text: url,
+                width: 80,
+                height: 80,
+                correctLevel: QRCode.CorrectLevel.H
+            });
+        }
+
+        function generateId() {
+            return 'CERT-' + Date.now() + '-' + Math.random().toString(36).substring(2, 8).toUpperCase();
+        }
+
+        function renderIssuedCertificates() {
+            const tbody = document.getElementById('issuedTableBody');
+            if (certificates.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #999;">No hay certificados emitidos</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = certificates.map(cert => {
+                const date = new Date(cert.date).toLocaleDateString('es-ES');
+                return `
+                    <tr>
+                        <td style="font-size: 0.85rem;">${cert.id}</td>
+                        <td>${cert.studentName}</td>
+                        <td>${cert.studentDNI}</td>
+                        <td>${date}</td>
+                        <td>
+                            <button class="btn btn-secondary" style="padding: 0.4rem 0.8rem;" onclick="copyCertLink('${cert.url}')">
+                                Copiar Enlace
+                            </button>
+                        </td>
+                        <td>
+                            <button class="btn btn-primary" style="padding: 0.4rem 0.8rem;" onclick="viewCertificate('${cert.id}')">Ver</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function copyCertLink(url) {
+            navigator.clipboard.writeText(url).then(() => {
+                alert('Enlace copiado al portapapeles');
+            });
+        }
+
+        function viewCertificate(certId) {
+            window.open(`?cert=${certId}`, '_blank');
+        }
+
+        // Certificate Verification
+        function showVerifyView(certId) {
+            showView('verify');
+            document.getElementById('verifyCertId').value = certId;
+        }
+
+        document.getElementById('verifyForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const dni = document.getElementById('verifyDNI').value;
+            const certId = document.getElementById('verifyCertId').value;
+
+            const cert = certificates.find(c => c.id === certId);
+            const resultDiv = document.getElementById('verifyResult');
+
+            if (!cert) {
+                resultDiv.innerHTML = '<div class="alert alert-danger">Certificado no encontrado</div>';
+                resultDiv.classList.remove('hidden');
+                return;
+            }
+
+            if (cert.studentDNI !== dni) {
+                resultDiv.innerHTML = '<div class="alert alert-danger">DNI incorrecto. Acceso denegado.</div>';
+                resultDiv.classList.remove('hidden');
+                return;
+            }
+
+            // DNI correcto - Mostrar certificado
+            resultDiv.innerHTML = `
+                <div class="alert alert-success">✓ Certificado verificado exitosamente</div>
+                <div class="certificate-info">
+                    <p><strong>Nombre:</strong> ${cert.studentName}</p>
+                    <p><strong>DNI:</strong> ${cert.studentDNI}</p>
+                    <p><strong>Fecha de emisión:</strong> ${new Date(cert.date).toLocaleDateString('es-ES')}</p>
+                    <p><strong>ID Certificado:</strong> ${cert.id}</p>
+                </div>
+                <div id="verifiedCertContainer" style="margin-top: 2rem;"></div>
+                <div class="btn-group" style="margin-top: 1rem;">
+                    <button class="btn btn-primary" onclick="downloadCertificate('${cert.id}')">Descargar Certificado</button>
+                </div>
+            `;
+            resultDiv.classList.remove('hidden');
+
+            setTimeout(() => {
+                renderCertificate(cert.studentName, cert.config, cert.id, 'verifiedCertContainer');
+            }, 100);
+        });
+
+        function downloadCertificate(certId) {
+            const element = document.getElementById(`cert-${certId}`);
+            if (!element) {
+                alert('Error al generar el certificado');
+                return;
+            }
+
+            html2canvas(element, {
+                scale: 2,
+                backgroundColor: '#ffffff'
+            }).then(canvas => {
+                canvas.toBlob(blob => {
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `Certificado_${certId}.png`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                });
+            });
+        }
+
+        function backToLogin() {
+            showView('login');
+            document.getElementById('verifyForm').reset();
+            document.getElementById('verifyResult').innerHTML = '';
+            document.getElementById('verifyResult').classList.add('hidden');
+        }
+
+        // Storage
+        function saveToStorage() {
+            localStorage.setItem('mst_students', JSON.stringify(students));
+            localStorage.setItem('mst_certificates', JSON.stringify(certificates));
+        }
+
+        function loadFromStorage() {
+            const savedStudents = localStorage.getItem('mst_students');
+            const savedCerts = localStorage.getItem('mst_certificates');
+
+            if (savedStudents) {
+                students = JSON.parse(savedStudents);
+                renderStudentsTable();
+            }
+
+            if (savedCerts) {
+                certificates = JSON.parse(savedCerts);
+            }
+        }
+    </script>
+</body>
+</html>

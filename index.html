@@ -130,11 +130,21 @@
             border: 1px solid #ddd;
             border-radius: 6px;
             font-size: 1rem;
+            -webkit-appearance: none;
+            appearance: none;
         }
 
         .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
             border-color: var(--primary-color);
             outline: none;
+            box-shadow: 0 0 0 3px rgba(0, 77, 153, 0.1);
+        }
+
+        /* Mejora para inputs numéricos en móviles */
+        input[type="text"][inputmode="numeric"] {
+            font-size: 1.2rem;
+            text-align: center;
+            letter-spacing: 2px;
         }
 
         .dashboard {
@@ -344,18 +354,30 @@
         }
 
         .qr-label {
-            font-size: 0.7em;
+            font-size: 0.75em;
             color: var(--primary-color);
             font-weight: 600;
             margin-top: 5px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
 
         .cert-qr-block > div {
-            width: 80px;
-            height: 80px;
-            padding: 5px;
+            width: 90px;
+            height: 90px;
+            padding: 8px;
             background: white;
-            border: 2px solid var(--primary-color);
+            border: 3px solid var(--primary-color);
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .cert-qr-block > div canvas,
+        .cert-qr-block > div img {
+            border-radius: 4px;
         }
 
         .file-upload-zone {
@@ -507,6 +529,11 @@
             
             .verify-box {
                 padding: 1.5rem;
+            }
+
+            .login-box {
+                padding: 2rem;
+                margin: 1rem;
             }
         }
 
@@ -769,7 +796,7 @@
                 <form id="verifyForm">
                     <div class="form-group">
                         <label>Número de DNI</label>
-                        <input type="text" id="verifyDNI" placeholder="12345678" required>
+                        <input type="text" id="verifyDNI" placeholder="12345678" required inputmode="numeric" pattern="[0-9]*">
                     </div>
                     <button type="submit" class="btn btn-primary" style="width: 100%;">Ver Certificado</button>
                 </form>
@@ -1107,8 +1134,10 @@
             element.innerHTML = '';
             new QRCode(element, {
                 text: url,
-                width: 80,
-                height: 80,
+                width: 90,
+                height: 90,
+                colorDark: "#004d99",
+                colorLight: "#ffffff",
                 correctLevel: QRCode.CorrectLevel.H
             });
         }
@@ -1143,10 +1172,15 @@
             const dni = document.getElementById('verifyDNI').value.trim();
             const resultDiv = document.getElementById('verifyResult');
 
-            const cert = certificates.find(function(c) { return c.studentDNI === dni; });
+            // Buscar el certificado con comparación más flexible
+            const cert = certificates.find(function(c) { 
+                const certDNI = String(c.studentDNI).trim();
+                const inputDNI = String(dni).trim();
+                return certDNI === inputDNI || certDNI === inputDNI.replace(/\D/g, '');
+            });
 
             if (!cert) {
-                resultDiv.innerHTML = '<div class="alert alert-danger">❌ Certificado no encontrado</div>';
+                resultDiv.innerHTML = '<div class="alert alert-danger">❌ Certificado no encontrado para el DNI: ' + dni + '</div>';
                 resultDiv.classList.remove('hidden');
                 return;
             }

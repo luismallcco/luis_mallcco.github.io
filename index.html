@@ -140,7 +140,6 @@
             box-shadow: 0 0 0 3px rgba(0, 77, 153, 0.1);
         }
 
-        /* Mejora para inputs numéricos en móviles */
         input[type="text"][inputmode="numeric"] {
             font-size: 1.2rem;
             text-align: center;
@@ -220,7 +219,6 @@
             background: #f8f9fa;
         }
 
-        /* CERTIFICADO HORIZONTAL */
         .certificate-wrapper {
             width: 100%;
             max-width: 1200px;
@@ -822,7 +820,10 @@
             updateVerificationLink();
 
             const urlParams = new URLSearchParams(window.location.search);
-            if (urlParams.has('verify')) {
+            if (urlParams.has('cert')) {
+                const dni = urlParams.get('cert');
+                showCertificateDirect(dni);
+            } else if (urlParams.has('verify')) {
                 showView('verify');
             }
         });
@@ -1097,10 +1098,53 @@
             const student = students[0];
 
             document.getElementById('certificatePreview').classList.remove('hidden');
-            renderCertificate(student.nombre, config, 'preview', 'certificateContainer');
+            renderCertificate(student.nombre, config, 'preview', 'certificateContainer', null);
         }
 
-        function renderCertificate(studentName, config, certId, containerId) {
+        function showCertificateDirect(dni) {
+            const cert = certificates.find(function(c) { 
+                const certDNI = String(c.studentDNI).trim();
+                const inputDNI = String(dni).trim();
+                return certDNI === inputDNI || certDNI === inputDNI.replace(/\D/g, '');
+            });
+
+            if (!cert) {
+                alert('Certificado no encontrado');
+                showView('verify');
+                return;
+            }
+
+            document.body.innerHTML = '<div class="verify-container"><div class="verify-box"><h2>✓ Certificado Verificado</h2><div class="certificate-info"><p><strong>Nombre:</strong> ' + cert.studentName + '</p><p><strong>DNI:</strong> ' + cert.studentDNI + '</p><p><strong>Fecha:</strong> ' + new Date(cert.date).toLocaleDateString('es-ES') + '</p></div><div id="directCertContainer" style="margin-top: 2rem;"></div><div class="btn-group"><button class="btn btn-primary" onclick="downloadCertificateDirect()">📥 Descargar</button><button class="btn btn-secondary" onclick="window.print()">🖨️ Imprimir</button><button class="btn btn-secondary" onclick="location.href=\'' + window.location.pathname + '\'">Volver</button></div></div></div>';
+
+            setTimeout(function() {
+                renderCertificate(cert.studentName, cert.config, cert.studentDNI, 'directCertContainer', cert.studentDNI);
+            }, 100);
+        }
+
+        function downloadCertificateDirect() {
+            const element = document.querySelector('.certificate-wrapper');
+            if (!element) {
+                alert('Error al generar el certificado');
+                return;
+            }
+
+            html2canvas(element, {
+                scale: 3,
+                backgroundColor: '#ffffff',
+                logging: false
+            }).then(function(canvas) {
+                canvas.toBlob(function(blob) {
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'Certificado_MST.png';
+                    a.click();
+                    URL.revokeObjectURL(url);
+                });
+            });
+        }
+
+        function renderCertificate(studentName, config, certId, containerId, studentDNI) {
             const container = document.getElementById(containerId);
 
             const dateObj = new Date(config.date);
@@ -1116,7 +1160,9 @@
             container.innerHTML = '<div class="certificate-wrapper" id="cert-' + certId + '"><div class="cert-company-name">MST CERTIFICA</div><h1 class="cert-title">' + config.title + '</h1><div class="cert-subtitle">' + config.subtitle + '</div><div class="cert-recipient">' + studentName + '</div><p class="cert-body-text">' + config.body + '</p><div class="cert-footer"><div class="cert-signature-block">' + sign1Html + '<div class="signature-line"></div><div class="signature-name">' + config.sign1Name + '</div><div class="signature-title">' + config.sign1Title + '</div></div><div class="cert-signature-block">' + sign2Html + '<div class="signature-line"></div><div class="signature-name">' + config.sign2Name + '</div><div class="signature-title">' + config.sign2Title + '</div><div class="signature-title" style="margin-top: 5px;">' + formattedDate + '</div></div></div><div class="cert-qr-block"><div id="qrcode-' + certId + '"></div><div class="qr-label">Verificar</div></div></div>';
 
             setTimeout(function() {
-                const verifyUrl = window.location.origin + window.location.pathname + '?verify';
+                const verifyUrl = studentDNI && certId !== 'preview' 
+                    ? window.location.origin + window.location.pathname + '?cert=' + encodeURIComponent(studentDNI)
+                    : window.location.origin + window.location.pathname + '?verify';
                 generateQR(verifyUrl, 'qrcode-' + certId);
 
                 if (certId === 'preview') {
@@ -1172,7 +1218,6 @@
             const dni = document.getElementById('verifyDNI').value.trim();
             const resultDiv = document.getElementById('verifyResult');
 
-            // Buscar el certificado con comparación más flexible
             const cert = certificates.find(function(c) { 
                 const certDNI = String(c.studentDNI).trim();
                 const inputDNI = String(dni).trim();
@@ -1190,7 +1235,7 @@
             resultDiv.classList.remove('hidden');
 
             setTimeout(function() {
-                renderCertificate(cert.studentName, cert.config, cert.studentDNI, 'verifiedCertContainer');
+                renderCertificate(cert.studentName, cert.config, cert.studentDNI, 'verifiedCertContainer', cert.studentDNI);
             }, 100);
         });
 

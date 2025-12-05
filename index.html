@@ -34,7 +34,6 @@
             display: none !important;
         }
 
-        /* Header */
         .header {
             background: linear-gradient(135deg, var(--primary-color), #0066cc);
             color: white;
@@ -90,7 +89,6 @@
             color: white;
         }
 
-        /* Login Page */
         .login-container {
             min-height: 100vh;
             display: flex;
@@ -139,7 +137,6 @@
             outline: none;
         }
 
-        /* Dashboard */
         .dashboard {
             padding: 2rem;
             max-width: 1400px;
@@ -151,6 +148,7 @@
             gap: 1rem;
             margin-bottom: 2rem;
             border-bottom: 2px solid #ddd;
+            overflow-x: auto;
         }
 
         .nav-tab {
@@ -162,6 +160,7 @@
             font-weight: 600;
             color: #666;
             transition: all 0.3s;
+            white-space: nowrap;
         }
 
         .nav-tab.active {
@@ -183,10 +182,16 @@
             font-family: 'Playfair Display', serif;
         }
 
-        /* Table */
         table {
             width: 100%;
             border-collapse: collapse;
+            overflow-x: auto;
+            display: block;
+        }
+
+        table thead, table tbody {
+            display: table;
+            width: 100%;
         }
 
         table th, table td {
@@ -205,7 +210,7 @@
             background: #f8f9fa;
         }
 
-        /* Certificate Preview - HORIZONTAL */
+        /* CERTIFICADO HORIZONTAL */
         .certificate-wrapper {
             width: 100%;
             max-width: 1200px;
@@ -388,13 +393,13 @@
             display: block;
         }
 
-        /* Verify Page */
         .verify-container {
             min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
             padding: 2rem;
+            background-color: var(--background-light);
         }
 
         .verify-box {
@@ -402,7 +407,7 @@
             padding: 3rem;
             border-radius: 12px;
             box-shadow: 0 10px 40px rgba(0,0,0,0.1);
-            max-width: 600px;
+            max-width: 95%;
             width: 100%;
             text-align: center;
         }
@@ -447,6 +452,7 @@
             gap: 1rem;
             margin-top: 1rem;
             flex-wrap: wrap;
+            justify-content: center;
         }
 
         .verification-link-box {
@@ -466,19 +472,66 @@
         }
 
         @media (max-width: 768px) {
-            .cert-title { font-size: 2em; margin-top: 60px; }
-            .cert-recipient { font-size: 1.8em; }
-            .cert-footer { flex-direction: column; gap: 1rem; }
-            .nav-tabs { flex-wrap: wrap; }
-            .signature-upload-container { grid-template-columns: 1fr; }
+            .header h1 {
+                font-size: 1.2rem;
+            }
+            
+            .cert-title { 
+                font-size: 1.8em; 
+                margin-top: 50px; 
+            }
+            
+            .cert-recipient { 
+                font-size: 1.5em; 
+            }
+            
+            .cert-body-text {
+                font-size: 0.85em;
+                max-width: 90%;
+            }
+            
+            .cert-footer { 
+                flex-direction: column; 
+                gap: 2rem;
+                margin-top: 20px;
+            }
+            
+            .signature-upload-container { 
+                grid-template-columns: 1fr; 
+            }
+            
+            .certificate-wrapper {
+                aspect-ratio: 1.414 / 1;
+                max-width: 100%;
+            }
+            
+            .verify-box {
+                padding: 1.5rem;
+            }
         }
 
         @media print {
+            body * {
+                visibility: hidden;
+            }
+            
+            .certificate-wrapper, .certificate-wrapper * {
+                visibility: visible;
+            }
+            
             .certificate-wrapper {
+                position: absolute;
+                left: 0;
+                top: 0;
                 width: 297mm;
                 height: 210mm;
                 max-width: none;
                 page-break-inside: avoid;
+            }
+            
+            @page {
+                size: A4 landscape;
+                margin: 0;
             }
         }
     </style>
@@ -514,24 +567,24 @@
     <!-- Dashboard View -->
     <div id="dashboardView" class="hidden">
         <div class="header">
-            <h1>🎓 MST CERTIFICA - Panel Administrativo</h1>
+            <h1>🎓 MST CERTIFICA</h1>
             <div class="user-info">
                 <span id="usernameDisplay">Admin</span>
-                <button class="btn btn-danger" onclick="logout()">Cerrar Sesión</button>
+                <button class="btn btn-danger" onclick="logout()">Salir</button>
             </div>
         </div>
 
         <div class="dashboard">
             <div class="nav-tabs">
-                <button class="nav-tab active" onclick="showTab('students')">Gestionar Alumnos</button>
-                <button class="nav-tab" onclick="showTab('certificates')">Generar Certificados</button>
-                <button class="nav-tab" onclick="showTab('issued')">Certificados Emitidos</button>
+                <button class="nav-tab active" onclick="showTab('students')">Alumnos</button>
+                <button class="nav-tab" onclick="showTab('certificates')">Certificados</button>
+                <button class="nav-tab" onclick="showTab('issued')">Emitidos</button>
             </div>
 
             <!-- Students Tab -->
             <div id="studentsTab" class="tab-content">
                 <div class="card">
-                    <h3>Agregar Alumno Individual</h3>
+                    <h3>Agregar Alumno</h3>
                     <form id="studentForm">
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                             <div class="form-group">
@@ -558,8 +611,8 @@
                 <div class="card">
                     <h3>Importar desde Excel</h3>
                     <div class="file-upload-zone" onclick="document.getElementById('excelFile').click()">
-                        <p>📄 Haz clic para subir archivo Excel (.xlsx, .xls, .csv)</p>
-                        <p style="font-size: 0.9rem; color: #666;">Columnas requeridas: NOMBRE, DNI</p>
+                        <p>📄 Haz clic para subir archivo Excel</p>
+                        <p style="font-size: 0.9rem; color: #666;">Columnas: NOMBRE, DNI</p>
                         <input type="file" id="excelFile" accept=".xlsx,.xls,.csv" style="display: none;" onchange="importExcel()">
                     </div>
                 </div>
@@ -578,7 +631,7 @@
                         </thead>
                         <tbody id="studentsTableBody">
                             <tr>
-                                <td colspan="5" style="text-align: center; color: #999;">No hay alumnos registrados</td>
+                                <td colspan="5" style="text-align: center; color: #999;">No hay alumnos</td>
                             </tr>
                         </tbody>
                     </table>
@@ -588,30 +641,30 @@
             <!-- Certificates Tab -->
             <div id="certificatesTab" class="tab-content hidden">
                 <div class="card">
-                    <h3>Cargar Firmas</h3>
+                    <h3>Firmas (PNG)</h3>
                     <div class="signature-upload-container">
                         <div class="signature-upload-box">
                             <h4>Firma Director</h4>
-                            <input type="file" id="signature1File" accept="image/png" style="display: none;" onchange="loadSignature(1)">
-                            <button class="btn btn-secondary" onclick="document.getElementById('signature1File').click()">Cargar PNG</button>
+                            <input type="file" id="signature1File" accept="image/png,image/jpeg,image/jpg" style="display: none;" onchange="loadSignature(1)">
+                            <button class="btn btn-secondary" onclick="document.getElementById('signature1File').click()">Cargar Imagen</button>
                             <img id="signature1Preview" class="signature-preview hidden" alt="Firma 1">
                             <button class="btn btn-danger" style="margin-top: 0.5rem; display: none;" id="removeSign1" onclick="removeSignature(1)">Eliminar</button>
                         </div>
                         <div class="signature-upload-box">
                             <h4>Firma Coordinador</h4>
-                            <input type="file" id="signature2File" accept="image/png" style="display: none;" onchange="loadSignature(2)">
-                            <button class="btn btn-secondary" onclick="document.getElementById('signature2File').click()">Cargar PNG</button>
+                            <input type="file" id="signature2File" accept="image/png,image/jpeg,image/jpg" style="display: none;" onchange="loadSignature(2)">
+                            <button class="btn btn-secondary" onclick="document.getElementById('signature2File').click()">Cargar Imagen</button>
                             <img id="signature2Preview" class="signature-preview hidden" alt="Firma 2">
                             <button class="btn btn-danger" style="margin-top: 0.5rem; display: none;" id="removeSign2" onclick="removeSignature(2)">Eliminar</button>
                         </div>
                     </div>
                     <p style="color: #666; font-size: 0.9rem;">
-                        💡 Tip: Las firmas se pueden arrastrar en la vista previa para posicionarlas
+                        💡 Arrastra las firmas en la vista previa para posicionarlas
                     </p>
                 </div>
 
                 <div class="card">
-                    <h3>Configuración del Certificado</h3>
+                    <h3>Configuración</h3>
                     <form id="certConfigForm">
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                             <div class="form-group">
@@ -655,49 +708,49 @@
                 <div class="card">
                     <h3>Generar Certificados</h3>
                     <div class="btn-group">
-                        <button class="btn btn-primary" onclick="generateBatchCertificates()">Generar para Todos los Alumnos</button>
+                        <button class="btn btn-primary" onclick="generateBatchCertificates()">Generar Todos</button>
                         <button class="btn btn-secondary" onclick="showCertificatePreview()">Vista Previa</button>
                     </div>
                     <p style="margin-top: 1rem; color: #666;">
-                        Se generarán <strong id="studentCount">0</strong> certificados
+                        Total: <strong id="studentCount">0</strong> certificados
                     </p>
                 </div>
 
                 <div id="certificatePreview" class="hidden">
                     <div class="card">
-                        <h3>Vista Previa del Certificado</h3>
-                        <p style="color: #666; margin-bottom: 1rem;">Arrastra las firmas para posicionarlas según tu preferencia</p>
+                        <h3>Vista Previa</h3>
+                        <p style="color: #666; margin-bottom: 1rem;">Arrastra las firmas para posicionarlas</p>
                         <div id="certificateContainer"></div>
                     </div>
                 </div>
             </div>
 
-            <!-- Issued Certificates Tab -->
+            <!-- Issued Tab -->
             <div id="issuedTab" class="tab-content hidden">
                 <div class="card">
-                    <h3>Certificados Emitidos</h3>
+                    <h3>Enlace de Verificación</h3>
                     <div class="verification-link-box">
-                        <h4 style="margin-bottom: 1rem;">Enlace de Verificación Único</h4>
-                        <p style="color: #666; margin-bottom: 1rem;">Comparte este enlace con tus alumnos. Ellos ingresarán su DNI para ver su certificado.</p>
+                        <h4 style="margin-bottom: 1rem;">Enlace Único para Todos</h4>
+                        <p style="color: #666; margin-bottom: 1rem;">Los alumnos ingresarán su DNI para ver su certificado</p>
                         <input type="text" id="verificationLink" readonly onclick="this.select()">
                         <button class="btn btn-primary" style="margin-top: 1rem;" onclick="copyVerificationLink()">Copiar Enlace</button>
                     </div>
                 </div>
 
                 <div class="card">
-                    <h3>Lista de Certificados</h3>
+                    <h3>Certificados Emitidos</h3>
                     <table>
                         <thead>
                             <tr>
                                 <th>Alumno</th>
                                 <th>DNI</th>
-                                <th>Fecha Emisión</th>
+                                <th>Fecha</th>
                                 <th>Estado</th>
                             </tr>
                         </thead>
                         <tbody id="issuedTableBody">
                             <tr>
-                                <td colspan="4" style="text-align: center; color: #999;">No hay certificados emitidos</td>
+                                <td colspan="4" style="text-align: center; color: #999;">No hay certificados</td>
                             </tr>
                         </tbody>
                     </table>
@@ -706,19 +759,19 @@
         </div>
     </div>
 
-    <!-- Verify Certificate View -->
+    <!-- Verify View -->
     <div id="verifyView" class="hidden">
         <div class="verify-container">
             <div class="verify-box">
                 <h2>🔐 Verificar Certificado</h2>
-                <p>Ingrese su DNI para acceder a su certificado</p>
+                <p>Ingrese su DNI para ver su certificado</p>
                 
                 <form id="verifyForm">
                     <div class="form-group">
                         <label>Número de DNI</label>
                         <input type="text" id="verifyDNI" placeholder="12345678" required>
                     </div>
-                    <button type="submit" class="btn btn-primary" style="width: 100%;">Verificar y Ver Certificado</button>
+                    <button type="submit" class="btn btn-primary" style="width: 100%;">Ver Certificado</button>
                 </form>
 
                 <div id="verifyResult" class="hidden"></div>
@@ -729,28 +782,24 @@
     </div>
 
     <script>
-        // Data Storage
         let students = [];
         let certificates = [];
         let currentUser = null;
         let signatureImages = { sign1: null, sign2: null };
         let signaturePositions = { sign1: { x: 0, y: -90 }, sign2: { x: 0, y: -90 } };
 
-        // Initialize
         document.addEventListener('DOMContentLoaded', function() {
             loadFromStorage();
             document.getElementById('certDate').valueAsDate = new Date();
             updateStudentCount();
             updateVerificationLink();
 
-            // Check if accessing verification page
             const urlParams = new URLSearchParams(window.location.search);
-            if (urlParams.has('verify') || urlParams.get('verify') === '') {
+            if (urlParams.has('verify')) {
                 showView('verify');
             }
         });
 
-        // Login
         document.getElementById('loginForm').addEventListener('submit', function(e) {
             e.preventDefault();
             const username = document.getElementById('loginUsername').value;
@@ -761,7 +810,7 @@
                 document.getElementById('usernameDisplay').textContent = username;
                 showView('dashboard');
             } else {
-                alert('Credenciales incorrectas. Intente con: admin / admin123');
+                alert('Credenciales incorrectas');
             }
         });
 
@@ -802,7 +851,6 @@
             }
         }
 
-        // Signature Management
         function loadSignature(num) {
             const file = document.getElementById('signature' + num + 'File').files[0];
             if (!file) return;
@@ -826,7 +874,6 @@
             saveToStorage();
         }
 
-        // Drag functionality for signatures
         function makeDraggable(element, signKey) {
             let isDragging = false;
             let startX, startY, initialX, initialY;
@@ -836,6 +883,19 @@
                 element.classList.add('dragging');
                 startX = e.clientX;
                 startY = e.clientY;
+                const transform = element.style.transform;
+                const match = transform.match(/translate\(([^,]+)px,\s*([^)]+)px\)/);
+                initialX = match ? parseFloat(match[1]) : 0;
+                initialY = match ? parseFloat(match[2]) : signaturePositions[signKey].y;
+                e.preventDefault();
+            });
+
+            element.addEventListener('touchstart', function(e) {
+                isDragging = true;
+                element.classList.add('dragging');
+                const touch = e.touches[0];
+                startX = touch.clientX;
+                startY = touch.clientY;
                 const transform = element.style.transform;
                 const match = transform.match(/translate\(([^,]+)px,\s*([^)]+)px\)/);
                 initialX = match ? parseFloat(match[1]) : 0;
@@ -853,7 +913,26 @@
                 signaturePositions[signKey] = { x: newX, y: newY };
             });
 
+            document.addEventListener('touchmove', function(e) {
+                if (!isDragging) return;
+                const touch = e.touches[0];
+                const dx = touch.clientX - startX;
+                const dy = touch.clientY - startY;
+                const newX = initialX + dx;
+                const newY = initialY + dy;
+                element.style.transform = 'translate(' + newX + 'px, ' + newY + 'px) translateX(-50%)';
+                signaturePositions[signKey] = { x: newX, y: newY };
+            });
+
             document.addEventListener('mouseup', function() {
+                if (isDragging) {
+                    isDragging = false;
+                    element.classList.remove('dragging');
+                    saveToStorage();
+                }
+            });
+
+            document.addEventListener('touchend', function() {
                 if (isDragging) {
                     isDragging = false;
                     element.classList.remove('dragging');
@@ -862,7 +941,6 @@
             });
         }
 
-        // Student Management
         document.getElementById('studentForm').addEventListener('submit', function(e) {
             e.preventDefault();
             const student = {
@@ -883,7 +961,7 @@
         function renderStudentsTable() {
             const tbody = document.getElementById('studentsTableBody');
             if (students.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: #999;">No hay alumnos registrados</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: #999;">No hay alumnos</td></tr>';
                 return;
             }
 
@@ -893,7 +971,7 @@
         }
 
         function deleteStudent(id) {
-            if (confirm('¿Está seguro de eliminar este alumno?')) {
+            if (confirm('¿Eliminar este alumno?')) {
                 students = students.filter(function(s) { return s.id !== id; });
                 saveToStorage();
                 renderStudentsTable();
@@ -930,7 +1008,7 @@
 
                 saveToStorage();
                 renderStudentsTable();
-                alert('Se importaron ' + imported + ' alumnos exitosamente');
+                alert('Se importaron ' + imported + ' alumnos');
             };
             reader.readAsArrayBuffer(file);
         }
@@ -939,10 +1017,9 @@
             document.getElementById('studentCount').textContent = students.length;
         }
 
-        // Certificate Generation
         function generateBatchCertificates() {
             if (students.length === 0) {
-                alert('No hay alumnos registrados. Por favor agregue alumnos primero.');
+                alert('No hay alumnos registrados');
                 return;
             }
 
@@ -950,23 +1027,19 @@
 
             const config = getCertificateConfig();
             certificates = [];
-            let generated = 0;
 
             students.forEach(function(student) {
-                const cert = {
+                certificates.push({
                     studentId: student.id,
                     studentName: student.nombre,
                     studentDNI: student.dni,
                     date: new Date().toISOString(),
                     config: config
-                };
-
-                certificates.push(cert);
-                generated++;
+                });
             });
 
             saveToStorage();
-            alert('Se generaron ' + generated + ' certificados exitosamente');
+            alert('✓ ' + certificates.length + ' certificados generados');
             showTab('issued');
         }
 
@@ -1013,7 +1086,7 @@
             const sign1Html = config.sign1Image ? '<img src="' + config.sign1Image + '" class="signature-image" id="sign1-' + certId + '" style="transform: translate(' + config.sign1Position.x + 'px, ' + config.sign1Position.y + 'px) translateX(-50%);" alt="Firma 1">' : '';
             const sign2Html = config.sign2Image ? '<img src="' + config.sign2Image + '" class="signature-image" id="sign2-' + certId + '" style="transform: translate(' + config.sign2Position.x + 'px, ' + config.sign2Position.y + 'px) translateX(-50%);" alt="Firma 2">' : '';
 
-            container.innerHTML = '<div class="certificate-wrapper" id="cert-' + certId + '"><div class="cert-company-name">MST CERTIFICA</div><h1 class="cert-title">' + config.title + '</h1><div class="cert-subtitle">' + config.subtitle + '</div><div class="cert-recipient">' + studentName + '</div><p class="cert-body-text">' + config.body + '</p><div class="cert-footer"><div class="cert-signature-block">' + sign1Html + '<div class="signature-line"></div><div class="signature-name">' + config.sign1Name + '</div><div class="signature-title">' + config.sign1Title + '</div></div><div class="cert-signature-block">' + sign2Html + '<div class="signature-line"></div><div class="signature-name">' + config.sign2Name + '</div><div class="signature-title">' + config.sign2Title + '</div><div class="signature-title" style="margin-top: 5px;">' + formattedDate + '</div></div></div><div class="cert-qr-block"><div id="qrcode-' + certId + '"></div><div class="qr-label">Verificar certificado</div></div></div>';
+            container.innerHTML = '<div class="certificate-wrapper" id="cert-' + certId + '"><div class="cert-company-name">MST CERTIFICA</div><h1 class="cert-title">' + config.title + '</h1><div class="cert-subtitle">' + config.subtitle + '</div><div class="cert-recipient">' + studentName + '</div><p class="cert-body-text">' + config.body + '</p><div class="cert-footer"><div class="cert-signature-block">' + sign1Html + '<div class="signature-line"></div><div class="signature-name">' + config.sign1Name + '</div><div class="signature-title">' + config.sign1Title + '</div></div><div class="cert-signature-block">' + sign2Html + '<div class="signature-line"></div><div class="signature-name">' + config.sign2Name + '</div><div class="signature-title">' + config.sign2Title + '</div><div class="signature-title" style="margin-top: 5px;">' + formattedDate + '</div></div></div><div class="cert-qr-block"><div id="qrcode-' + certId + '"></div><div class="qr-label">Verificar</div></div></div>';
 
             setTimeout(function() {
                 const verifyUrl = window.location.origin + window.location.pathname + '?verify';
@@ -1048,15 +1121,14 @@
         function copyVerificationLink() {
             const input = document.getElementById('verificationLink');
             input.select();
-            navigator.clipboard.writeText(input.value).then(function() {
-                alert('✓ Enlace de verificación copiado al portapapeles');
-            });
+            document.execCommand('copy');
+            alert('✓ Enlace copiado');
         }
 
         function renderIssuedCertificates() {
             const tbody = document.getElementById('issuedTableBody');
             if (certificates.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: #999;">No hay certificados emitidos</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: #999;">No hay certificados</td></tr>';
                 return;
             }
 
@@ -1066,7 +1138,6 @@
             }).join('');
         }
 
-        // Certificate Verification
         document.getElementById('verifyForm').addEventListener('submit', function(e) {
             e.preventDefault();
             const dni = document.getElementById('verifyDNI').value.trim();
@@ -1075,13 +1146,13 @@
             const cert = certificates.find(function(c) { return c.studentDNI === dni; });
 
             if (!cert) {
-                resultDiv.innerHTML = '<div class="alert alert-danger">❌ No se encontró ningún certificado para este DNI</div>';
+                resultDiv.innerHTML = '<div class="alert alert-danger">❌ Certificado no encontrado</div>';
                 resultDiv.classList.remove('hidden');
                 return;
             }
 
             const dateStr = new Date(cert.date).toLocaleDateString('es-ES');
-            resultDiv.innerHTML = '<div class="alert alert-success">✓ Certificado verificado exitosamente</div><div class="certificate-info"><p><strong>Nombre:</strong> ' + cert.studentName + '</p><p><strong>DNI:</strong> ' + cert.studentDNI + '</p><p><strong>Fecha de emisión:</strong> ' + dateStr + '</p></div><div id="verifiedCertContainer" style="margin-top: 2rem;"></div><div class="btn-group" style="margin-top: 1rem;"><button class="btn btn-primary" onclick="downloadCertificate(\'' + cert.studentDNI + '\')">📥 Descargar Certificado</button><button class="btn btn-secondary" onclick="printCertificate(\'' + cert.studentDNI + '\')">🖨️ Imprimir</button></div>';
+            resultDiv.innerHTML = '<div class="alert alert-success">✓ Certificado verificado</div><div class="certificate-info"><p><strong>Nombre:</strong> ' + cert.studentName + '</p><p><strong>DNI:</strong> ' + cert.studentDNI + '</p><p><strong>Fecha:</strong> ' + dateStr + '</p></div><div id="verifiedCertContainer" style="margin-top: 2rem;"></div><div class="btn-group"><button class="btn btn-primary" onclick="downloadCertificate(\'' + cert.studentDNI + '\')">📥 Descargar</button><button class="btn btn-secondary" onclick="printCertificate(\'' + cert.studentDNI + '\')">🖨️ Imprimir</button></div>';
             resultDiv.classList.remove('hidden');
 
             setTimeout(function() {
@@ -1115,13 +1186,11 @@
         function printCertificate(dni) {
             const element = document.getElementById('cert-' + dni);
             if (!element) {
-                alert('Error al generar el certificado');
+                alert('Error al imprimir');
                 return;
             }
 
-            const printWindow = window.open('', '_blank');
-            printWindow.document.write('<html><head><title>Certificado</title><style>@page { size: landscape; margin: 0; } body { margin: 0; padding: 20px; } img { max-width: 100%; height: auto; }</style></head><body>' + element.outerHTML + '<script>window.onload = function() { window.print(); }<\/script></body></html>');
-            printWindow.document.close();
+            window.print();
         }
 
         function backToLogin() {
@@ -1131,7 +1200,6 @@
             document.getElementById('verifyResult').classList.add('hidden');
         }
 
-        // Storage
         function saveToStorage() {
             localStorage.setItem('mst_students', JSON.stringify(students));
             localStorage.setItem('mst_certificates', JSON.stringify(certificates));
